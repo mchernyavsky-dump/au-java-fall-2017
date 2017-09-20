@@ -23,16 +23,4 @@ public class NaiveTestWithThreads extends AbstractConcurrentLazyTest {
             } catch (InterruptedException ignored) { }
         }
     }
-
-    public static <T> Lazy<T> createLazyLockFree(Supplier<T> supplier) {
-        return new Lazy<T>() {
-            final private AtomicReference<T> result = new AtomicReference<>();
-
-            @Override
-            public T get() {
-                result.compareAndSet(null, supplier.get());
-                return result.get();
-            }
-        };
-    }
 }
