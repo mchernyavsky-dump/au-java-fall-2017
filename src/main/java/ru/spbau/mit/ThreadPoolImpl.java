@@ -61,7 +61,7 @@ public class ThreadPoolImpl implements ThreadPool {
                     final LightFutureImpl<?> task;
                     synchronized (tasks) {
                         while (tasks.isEmpty()) {
-                            wait();
+                            tasks.wait();
                         }
                         task = tasks.remove();
                     }
@@ -126,8 +126,18 @@ public class ThreadPoolImpl implements ThreadPool {
                 }
             });
 
-            synchronized (dependentTasks) {
-                dependentTasks.add(task);
+            if (!isReady()) {
+                synchronized (this) {
+                    if (!isReady()) {
+                        synchronized (dependentTasks) {
+                            dependentTasks.add(task);
+                        }
+                    } else {
+                        submit(task);
+                    }
+                }
+            } else {
+                submit(task);
             }
 
             return task;
@@ -155,13 +165,13 @@ public class ThreadPoolImpl implements ThreadPool {
             setException(new LightExecutionException("The task was canceled"));
         }
 
-        private void setResult(@Nullable final T result) {
+        private synchronized void setResult(@Nullable final T result) {
             this.result = result;
             readyFlag = true;
             notifyAll();
         }
 
-        private void setException(@NotNull final LightExecutionException exception) {
+        private synchronized void setException(@NotNull final LightExecutionException exception) {
             this.exception = exception;
             readyFlag = true;
             notifyAll();
