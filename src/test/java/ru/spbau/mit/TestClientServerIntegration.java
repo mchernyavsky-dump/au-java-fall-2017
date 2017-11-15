@@ -29,6 +29,8 @@ public class TestClientServerIntegration {
     @NotNull
     private static final Path ROOT = Paths.get("src/test/resources/testRoot");
 
+    private static final int TEST_TIMEOUT = 100;
+
     @Nullable
     private FTPClient client;
     @Nullable
@@ -43,10 +45,10 @@ public class TestClientServerIntegration {
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws InterruptedException {
         if (client != null) {
             try {
-                client.close();
+                client.disconnect();
             } catch (IOException ignored) {
             } finally {
                 client = null;
@@ -55,12 +57,14 @@ public class TestClientServerIntegration {
 
         if (server != null) {
             try {
-                server.close();
+                server.stop();
             } catch (IOException ignored) {
             } finally {
                 server = null;
             }
         }
+
+        Thread.sleep(TEST_TIMEOUT);
     }
 
     @Test
